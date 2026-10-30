@@ -240,7 +240,7 @@ function onWheelState(r: WheelReading): void {
   renderAlarm();
 
   // Portal watch edge.
-  if (wasRunning === true && !r.running && !gracePreview) startGrace(false);
+  if (wasRunning === true && !r.running) startGrace(false);
   if (r.running && (graceEnd > 0 || collapsed) && !gracePreview) { graceEnd = 0; resetWatch(); }
   if (wasRunning === null && !r.running && !gracePreview) {
     setWatch("idle", "Squeektoshi is asleep. The countdown starts the next time a running wheel stops.", `${GRACE_SECONDS.toFixed(1)} s`);
@@ -444,6 +444,19 @@ function bindProvider(p: Eip1193): void {
   p.on?.("chainChanged", (id: unknown) => { chainId = String(id); renderWallet(); });
 }
 
+async function selectSepolia(p: Eip1193): Promise<void> {
+  try {
+    await ensureSepolia(p);
+    chainId = SEPOLIA.chainId;
+  } catch (e) {
+    // Refresh the actual chain even when a wallet did not emit chainChanged.
+    chainId = await p.request({ method: "eth_chainId" }).then(String, () => "");
+    throw e;
+  } finally {
+    renderWallet();
+  }
+}
+
 async function connect(d: Discovered): Promise<boolean> {
   const note = $("sheetNote");
   note.textContent = `Waiting for ${d.info.name}…`;
@@ -454,8 +467,7 @@ async function connect(d: Discovered): Promise<boolean> {
     account = accs[0];
     chainId = String(await d.provider.request({ method: "eth_chainId" }));
     bindProvider(d.provider);
-    try { await ensureSepolia(d.provider); chainId = SEPOLIA.chainId; } catch (e) { note.textContent = `Connected, but still off Sepolia: ${errText(e)}`; }
-    renderWallet();
+    try { await selectSepolia(d.provider); } catch (e) { note.textContent = `Connected, but still off Sepolia: ${errText(e)}`; }
     return true;
   } catch (e) {
     note.textContent = errText(e);
@@ -487,7 +499,7 @@ function renderSheet(): void {
     $("sheetTitle").textContent = "Wallet";
     if (chainId.toLowerCase() !== SEPOLIA.chainId && wallet) {
       row("Switch to Ethereum Sepolia", "", async () => {
-        try { await ensureSepolia(wallet!.provider); chainId = SEPOLIA.chainId; renderWallet(); renderSheet(); }
+        try { await selectSepolia(wallet!.provider); renderSheet(); }
         catch (e) { $("sheetNote").textContent = errText(e); }
       });
     }
@@ -536,9 +548,7 @@ async function sendTx(label: string, to: string, data: string): Promise<void> {
   renderCheckpoint();
   renderTxs();
   try {
-    await ensureSepolia(wallet.provider);
-    chainId = SEPOLIA.chainId;
-    renderWallet();
+    await selectSepolia(wallet.provider);
     const hash = String(await wallet.provider.request({ method: "eth_sendTransaction", params: [{ from: account, to, value: "0x0", data }] }));
     entry.hash = hash;
     entry.note = "Submitted. Waiting for Sepolia to include it.";

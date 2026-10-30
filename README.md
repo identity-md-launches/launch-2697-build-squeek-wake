@@ -4,7 +4,7 @@ A single-page static site for Squeekchain on Ethereum Sepolia. It has three part
 
 - **WHEELY9000 wake siren.** A live hamster-wheel gauge that spins at the reported RPM. It shows block progress, cumulative work, lifetime km, minted SQK and round numbers. A Web Audio siren rings on "Any wheel motion" or "Zoomies (>40 RPM)", and the portal collapse watch runs an 8-second grace countdown when a running wheel stops.
 - **6-pocket raid drill.** A canvas extraction game. Move with WASD, the arrow keys or the on-screen pad. Puff (Space) stuns traps and Drop (X) throws away your lowest-value relic. Every 20 to 30 seconds, or when the live wheel has been stopped for 8 seconds, a 10-second "GET OUT" collapse starts. Reach the Mint Portal before it ends to bank your score. Your personal best and raid history are saved in this browser's `localStorage`.
-- **Sepolia keeper console.** Connect MetaMask, Rabby or another browser wallet. The site finds wallets through EIP-6963, falls back to `window.ethereum`, and makes every call with `provider.request`. It then sends either "Run mining checkpoint" or the "Send tester ping (0-approve SQK)" transaction. The site switches the wallet to Sepolia (`0xaa36a7`), or adds the network if the wallet doesn't have it. A transaction log links each hash to `https://eth-sepolia.blockscout.com/tx/<hash>`.
+- **Sepolia keeper console.** Connect MetaMask, Rabby or another browser wallet. The site finds wallets through EIP-6963, falls back to `window.ethereum`, and makes every call with `provider.request`. It then sends either "Run mining checkpoint" or the "Send tester ping (0-approve SQK)" transaction. The site switches the wallet to Sepolia (`0xaa36a7`), or adds the network if the wallet doesn't have it. After adding Sepolia it explicitly switches again, then checks `eth_chainId` before reporting success or requesting a transaction. A rejected or ineffective switch keeps the wrong-network state and stops the action. A transaction log links each hash to `https://eth-sepolia.blockscout.com/tx/<hash>`.
 
 ## Live sources
 
@@ -48,33 +48,31 @@ npm run build       # typecheck, then write the static export to dist/
 npm run preview     # serve dist/ locally to check the production build
 ```
 
-Commit `dist/` after every rebuild, because the host serves the committed export without building it. `node_modules/` is excluded by `.gitignore`. That file ignores only `node_modules/` and has no other paths.
+Commit `dist/` after every rebuild, because the host serves the committed export without building it. `.gitignore` excludes `node_modules/` at every nesting level and includes narrow exceptions for the required response JSON and validation record. Their explicit path budgets are documented in the validation record.
 
-## Validation (results from this build)
+## Validation (revision, 2026-10-30)
 
-Commands I ran on the final source:
+All three review reports reproduced against the accepted export before editing. The revision fixes network verification after adding Sepolia, movement-key release after focus moves to a control, and real wheel-stop transitions during a preview.
 
-- `npm run typecheck`: passed with no errors.
-- `npm run build`: passed. It wrote `dist/index.html`, one CSS file and one JS file under `dist/assets/` (about 13.8 kB, 15 kB and 34 kB before gzip), plus `favicon.svg` and `og.png`.
-- A Playwright interaction script (kept in `test/scratch/`, which is not committed). It serves `dist/` under a `/sub/` path, to prove the relative URLs work, and runs Chromium at 390, 1440 and 320 px wide. It checked:
-  - no horizontal overflow, zero console errors and no failed requests at all three widths
-  - live status, economy and `checkpointStatus()` values rendered
-  - Arm alarm visible on the first 390×844 screen
-  - Arm, Simulate wake event and Test siren work
-  - Preview a wheel stop counts down from 8.0 s and ends in "PORTAL COLLAPSING"
-  - Practice override enables Start raid. Arrow keys, Space, X and the touch pad drive the raid, and the scheduled collapse banks the raid at the portal into history and `localStorage`
-  - With a mocked EIP-6963 wallet, connecting adds and switches to Sepolia. Both buttons send `eth_sendTransaction` with the exact `to`, `value` and `data` from the brief, and the log links to Blockscout
-  - With the API and RPC blocked, the offline banner shows
-- `node .imd/reads/skills/design-critic/scripts/taste.mjs --out test/scratch/taste` (the design probe): 16 of 16 checks passed.
+Checks run on the revised production export:
+
+- `npm ci`: installed the existing lockfile without changing dependencies.
+- `npm run typecheck` and `npm run build`: passed. The complete `dist/` is 120,041 bytes, including the share image and favicon.
+- `node test/scratch/revision-checks.mjs baseline`: reproduced all three reported defects before the fixes.
+- `node test/scratch/revision-checks.mjs regression`: **15/15 scenarios passed** in Chromium at 390 and 1440 px, serving `dist/` under `/sub/`. Controlled API responses, a native wallet stub and a virtual browser clock exercised successful, rejected and ineffective network switches; initial connection; both exact transaction payloads and receipt/explorer states; key releases over Puff, Drop and a checkbox; preview replacement before/after its alert; and restart cancellation. Zero page or console errors were captured.
+- `node .imd/reads/skills/design-critic/scripts/taste.mjs --out test/scratch/taste`: **16/16 checks passed**, including reflow at 320, 390 and 1440 px, rendered text contrast, reduced motion and share metadata.
+- Browser inspection of the export at 390×844 and 1440×900: the first phone screen shows the wheel and Arm alarm (bottom at 586.6 px). Keyboard focus is visible and Enter arms the alarm. The live status/economy/RPC requests returned HTTP 200, with zero console errors.
+
+The temporary interaction scripts and screenshots live in `test/scratch/`, which is removed before submission. Regression fixtures are confined there; the production site keeps the supplied public data sources and contract parameters.
 
 Limitations:
 
-- I didn't use a real wallet. Real signing and sending to Sepolia were not exercised; the transaction path was tested against a mocked provider.
-- The siren was triggered in headless Chromium, but nobody listened to it.
-- I did no physical-device, WebKit/Safari or screen-reader testing.
-- The wheel was idle for the whole session, so the live idle-to-running and running-to-idle transitions were only exercised through the preview buttons and the parsing logic.
-- Coinbase Smart Wallet (passkey) needs the Coinbase SDK, which the brief's "native `window.ethereum.request` only" rule rules out. Coinbase Wallet's extension is still found through EIP-6963. On phones, "Open in MetaMask / Coinbase Wallet / Phantom" links open the page in the wallet's own browser.
+- No real wallet signing or broadcast was performed; wallet responses and receipts were mocked.
+- Audible siren output, physical devices, screen readers, native 200% zoom and RTL were not tested in this revision.
+- WebKit could not launch because its system libraries are missing, so the revised behavior was checked in Chromium only.
+- The observed live feed was idle; real motion/stop edges were exercised with controlled feed responses.
+- Coinbase Smart Wallet (passkey) needs an SDK, which conflicts with the brief's native-provider-only requirement. Existing EIP-6963 discovery and phone wallet-browser links are retained.
 
-Full review notes are in `artifacts/validation.md`.
+The six-domain review, reproduction evidence and fixes are recorded in [artifacts/validation.md](artifacts/validation.md). Per-finding responses are in `.imd-responses.json`.
 
 Built by @tatthang · Powered by Squeekchain Sepolia Telemetry

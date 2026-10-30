@@ -83,12 +83,12 @@ Flat. There are no shadows. Depth comes from tonal layers (`--color-bg` → `--c
 - **Readout** `dl.readout`: a `dt` label (14px muted sans) above a `dd` value (mono, tabular). Use `.readout-grid` for 2/3-column stats and `.readout-main` for the stacked gauge column. Placeholder value `--` while loading.
 - **Progress bar** `.bar > .bar-fill`: a 10px track. The fill is scaled with `transform: scaleX()` and animated over 600ms unless reduced motion is set. It carries `role="progressbar"` with `aria-valuenow`.
 - **State pill** `.state` / `.feed-pill`: an 8px `.dot` plus a text label. The colour comes from `data-state` (`live`/`running` emerald, `stale` gold, `offline` red, otherwise muted). The text always states the status, so colour is never the only cue.
-- **Status boxes**: `.banner` (`role="status"`, hidden when every source is healthy), `.wake-alert` (`role="alert"`), `.watch` with `data-state` `idle | grace | collapse`. The countdown is `aria-hidden` and the sentence in `#watchText` is the live region.
+- **Status boxes**: `.banner` (`role="status"`, hidden when every source is healthy), `.wake-alert` (`role="alert"`), `.watch` with `data-state` `idle | grace | collapse`. The countdown is `aria-hidden` and the sentence in `#watchText` is the live region. A real running-to-idle transition replaces any preview timer with a live grace countdown; renewed motion cancels that live countdown.
 - **Raid HUD** `.hud`: HP bar, six `.slot` squares (filled with the relic colour through `--c`), carry value and collapse timer (`.danger` while collapsing).
 - **D-pad** `.pad`: a 3×2 grid of 48×44 `.pad-btn` buttons with `aria-label`s and pointer-capture hold, plus Puff and Drop `.btn`s.
 - **Tx log** `ol.txlog > li[data-status]`: `pending | confirmed | failed | error` sets the left rule colour. Each row has the label, a status word and a Blockscout hash link.
-- **Wallet sheet** `dialog.sheet` with `.wallet-row` (48px rows, a 28px icon with a 10% white outline). It is opened with `showModal()`, so Escape and focus return come from the browser.
-- **Focus**: global `:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }`. The canvas is focusable (`tabindex="0"`) and gets focus when a raid starts.
+- **Wallet sheet** `dialog.sheet` with `.wallet-row` (48px rows, a 28px icon with a 10% white outline). It is opened with `showModal()`, so Escape and focus return come from the browser. Network selection explicitly switches after adding Sepolia and verifies `eth_chainId`; failures retain the actual wrong-network state and the transaction log says "Not sent".
+- **Focus**: global `:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }`. The canvas is focusable (`tabindex="0"`) and gets focus when a raid starts. Movement-key releases clear held movement even after focus moves to Puff, Drop or a form control; new movement presses on those controls remain ignored.
 
 ## Do's and Don'ts
 

@@ -82,6 +82,12 @@ export async function ensureSepolia(p: Eip1193): Promise<void> {
         blockExplorerUrls: SEPOLIA.blockExplorerUrls,
       }],
     });
+    // Adding a network does not select it (EIP-3085).
+    await p.request({ method: "wallet_switchEthereumChain", params: [{ chainId: SEPOLIA.chainId }] });
+  }
+  const selected = String(await p.request({ method: "eth_chainId" })).toLowerCase();
+  if (selected !== SEPOLIA.chainId) {
+    throw new Error("The wallet is still off Sepolia. Switch to Ethereum Sepolia in your wallet, then try again.");
   }
 }
 

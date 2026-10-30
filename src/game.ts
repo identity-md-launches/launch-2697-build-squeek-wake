@@ -93,19 +93,21 @@ export class RaidGame {
   }
 
   private onKey(e: KeyboardEvent, down: boolean): void {
+    const k = e.key.toLowerCase();
+    // A held key must be released even if focus moved to Puff, Drop or a form control.
+    if (!down) { this.keys.delete(k); return; }
     if (!this.running) return;
     const target = e.target as HTMLElement | null;
     // Leave typing and form controls alone; the canvas and the page body drive the game.
     if (target && target !== this.canvas && target !== document.body && /^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(target.tagName)) return;
-    const k = e.key.toLowerCase();
     const move = ["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"];
     if (move.includes(k)) {
       e.preventDefault();
-      if (down) this.keys.add(k); else this.keys.delete(k);
-    } else if (down && (k === " " || k === "spacebar")) {
+      this.keys.add(k);
+    } else if (k === " " || k === "spacebar") {
       e.preventDefault();
       this.puff();
-    } else if (down && k === "x") {
+    } else if (k === "x") {
       e.preventDefault();
       this.dropLowest();
     }

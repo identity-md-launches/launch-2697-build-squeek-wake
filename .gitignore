@@ -1,1 +1,7 @@
 node_modules/
+
+# Delivery path budgets: .gitignore <= 512 B; responses <= 4 KiB; validation <= 12 KiB.
+!/.imd-responses.json
+!/artifacts/
+/artifacts/*
+!/artifacts/validation.md
