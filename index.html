@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Squeek Wake &amp; Raid · WHEELY9000 siren, raid drill and Sepolia keeper</title>
+    <meta name="description" content="Live WHEELY9000 hamster wheel telemetry from Squeekchain on Ethereum Sepolia, with a wake siren, a 6-pocket raid mini-game and a keeper console that sends real Sepolia transactions." />
+    <meta name="theme-color" content="#0b0b0e" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Squeek Wake &amp; Raid" />
+    <meta property="og:description" content="Wake siren, raid drill and Sepolia keeper console for the live Squeekchain hamster wheel." />
+    <meta property="og:image" content="./og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Squeek Wake &amp; Raid" />
+    <meta name="twitter:image" content="./og.png" />
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="topbar">
+      <a class="brand" href="#main" aria-label="Squeek Wake and Raid, back to top">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="2.5" />
+          <path d="M16 3v26M3 16h26M6.8 6.8l18.4 18.4M25.2 6.8 6.8 25.2" stroke="currentColor" stroke-width="1.5" />
+          <circle cx="16" cy="16" r="4" fill="#ffc048" />
+        </svg>
+        <span>Squeek Wake &amp; Raid</span>
+      </a>
+      <div class="topbar-tools">
+        <span class="feed-pill" id="feedPill" data-state="loading"><span class="dot" aria-hidden="true"></span><span id="feedPillText">Connecting</span></span>
+        <button type="button" class="btn btn-quiet" id="connectBtn">Connect<span class="wide-only"> wallet</span></button>
+      </div>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <section class="intro" aria-labelledby="pageTitle">
+        <h1 id="pageTitle">Wake the hamster, raid the portal</h1>
+        <p class="lede">Live WHEELY9000 telemetry from Squeekchain on Sepolia, with a wake siren, a raid drill and a keeper console.</p>
+      </section>
+
+      <div class="banner" id="banner" role="status" aria-live="polite" hidden></div>
+
+      <div class="grid">
+        <!-- A: wheel, siren, portal watch -->
+        <section class="panel panel-wheel" aria-labelledby="wheelTitle">
+          <div class="panel-head">
+            <h2 id="wheelTitle">WHEELY9000 wake siren</h2>
+            <p class="state-line"><span class="state" id="wheelState" data-state="loading"><span class="dot" aria-hidden="true"></span><span id="wheelStateText">Reading the wheel</span></span>
+              <span class="muted" id="updatedAt">Waiting for first reading</span></p>
+          </div>
+
+          <div class="gauge-row">
+            <div class="gauge" aria-hidden="true">
+              <svg viewBox="0 0 120 120" class="wheel-svg">
+                <circle cx="60" cy="60" r="56" class="wheel-rim" />
+                <g id="wheelRotor" class="wheel-rotor">
+                  <circle cx="60" cy="60" r="48" class="wheel-track" />
+                  <g class="wheel-spokes">
+                    <line x1="60" y1="12" x2="60" y2="108" />
+                    <line x1="12" y1="60" x2="108" y2="60" />
+                    <line x1="26" y1="26" x2="94" y2="94" />
+                    <line x1="94" y1="26" x2="26" y2="94" />
+                  </g>
+                  <circle cx="60" cy="12" r="5" class="wheel-marker" />
+                </g>
+                <circle cx="60" cy="60" r="9" class="wheel-hub" />
+              </svg>
+            </div>
+            <dl class="readout readout-main">
+              <div><dt>Wheel speed</dt><dd><span class="num big" id="rpm">--</span> <span class="unit">RPM</span></dd></div>
+              <div><dt>Ground speed</dt><dd><span class="num" id="speed">--</span> <span class="unit">m/s</span></dd></div>
+              <div><dt>Core status</dt><dd><span class="num" id="coreStatus">--</span></dd></div>
+            </dl>
+          </div>
+
+          <div class="subsection alarm" aria-labelledby="alarmTitle">
+            <h3 id="alarmTitle">Wake alarm</h3>
+            <div class="actions">
+              <button type="button" class="btn btn-primary" id="armBtn" aria-pressed="false">Arm alarm</button>
+              <button type="button" class="btn" id="testBtn">Test siren</button>
+              <button type="button" class="btn" id="simWakeBtn">Simulate wake event</button>
+              <button type="button" class="btn btn-danger-quiet" id="silenceBtn" hidden>Silence siren</button>
+            </div>
+            <fieldset class="mode">
+              <legend>Ring when</legend>
+              <label class="choice"><input type="radio" name="alarmMode" value="any" checked /> Any wheel motion</label>
+              <label class="choice"><input type="radio" name="alarmMode" value="zoomies" /> Zoomies (&gt;40 RPM)</label>
+            </fieldset>
+            <label class="volume" for="volume"><span>Volume</span>
+              <input type="range" id="volume" min="0" max="100" value="60" />
+              <output class="num" id="volumeOut" for="volume">60%</output>
+            </label>
+            <p class="hint" id="alarmHint">The alarm is off. Arm it and keep this tab open; the siren plays when the wheel starts.</p>
+            <div class="wake-alert" id="wakeAlert" role="alert" hidden></div>
+          </div>
+
+          <div class="block-bar">
+            <div class="block-bar-label"><span>Block <span class="num" id="blockHeight">--</span> progress</span><span class="num" id="blockPct">--</span></div>
+            <div class="bar" role="progressbar" aria-labelledby="blockHeightLabel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="blockBar"><span class="bar-fill" id="blockFill"></span></div>
+            <span class="sr-only" id="blockHeightLabel">Current block completion</span>
+          </div>
+
+          <dl class="readout readout-grid">
+            <div><dt>Cumulative work</dt><dd class="num" id="work">--</dd></div>
+            <div><dt>Lifetime distance</dt><dd><span class="num" id="km">--</span> <span class="unit">km</span></dd></div>
+            <div><dt>Minted SQK</dt><dd class="num" id="minted">--</dd></div>
+            <div><dt>Current round</dt><dd class="num" id="round">--</dd></div>
+            <div><dt>Settled through round</dt><dd class="num" id="settled">--</dd></div>
+            <div><dt>Funded blocks</dt><dd class="num" id="funded">--</dd></div>
+          </dl>
+
+          <div class="subsection" aria-labelledby="watchTitle">
+            <h3 id="watchTitle">Portal collapse watch</h3>
+            <div class="watch" id="watch" data-state="idle">
+              <p class="watch-count num" id="watchCount" aria-hidden="true">8.0 s</p>
+              <p class="watch-text" id="watchText" role="status">Watching. The 8-second grace countdown starts when a running wheel stops.</p>
+            </div>
+            <div class="actions">
+              <a class="btn" href="https://squeek.win" target="_blank" rel="noopener noreferrer">Open Live Garden</a>
+              <a class="btn" href="https://x.com/squeekchain" target="_blank" rel="noopener noreferrer">Watch livestream on X</a>
+              <button type="button" class="btn btn-quiet" id="simStopBtn">Preview a wheel stop</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- B: raid drill -->
+        <section class="panel panel-game" aria-labelledby="gameTitle">
+          <div class="panel-head">
+            <h2 id="gameTitle">6-pocket raid drill</h2>
+            <p class="muted" id="gameGate">Raids open while the wheel runs.</p>
+          </div>
+          <div class="hud" role="group" aria-label="Raid status">
+            <div class="hud-item"><span class="hud-label">HP</span><span class="hp"><span class="hp-fill" id="hpFill"></span></span><span class="num" id="hpText">100</span></div>
+            <div class="hud-item"><span class="hud-label">Pockets</span><span class="pockets" id="pockets" role="img" aria-label="0 of 6 pockets used"></span></div>
+            <div class="hud-item"><span class="hud-label">Carrying</span><span class="num" id="carry">0</span></div>
+            <div class="hud-item"><span class="hud-label" id="collapseLabel">Collapse in</span><span class="num" id="collapseIn">--</span></div>
+          </div>
+          <div class="stage">
+            <canvas id="game" width="480" height="360" tabindex="0" aria-label="Raid drill arena. Use arrow keys or WASD to move, Space to puff, X to drop loot." aria-describedby="gameHelp"></canvas>
+          </div>
+          <div class="game-controls">
+            <div class="game-actions">
+              <button type="button" class="btn btn-primary" id="startBtn">Start raid</button>
+              <label class="switch"><input type="checkbox" id="practice" /> Practice override</label>
+            </div>
+            <div class="pad" role="group" aria-label="Touch controls">
+              <button type="button" class="pad-btn" data-dir="up" aria-label="Move up"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6" /></svg></button>
+              <button type="button" class="pad-btn" data-dir="left" aria-label="Move left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg></button>
+              <button type="button" class="pad-btn" data-dir="down" aria-label="Move down"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg></button>
+              <button type="button" class="pad-btn" data-dir="right" aria-label="Move right"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg></button>
+              <button type="button" class="btn pad-act" id="puffBtn">Puff</button>
+              <button type="button" class="btn pad-act" id="dropBtn">Drop</button>
+            </div>
+          </div>
+          <p class="hint" id="gameHelp">Move with WASD or the arrow keys, Space to puff traps, X to drop your lowest-value relic. Snap-Jaws stay out of the dashed ring around the portal. When the portal collapses, get back to the centre within 10 seconds to bank your loot.</p>
+          <ul class="legend" aria-label="Relics">
+            <li><span class="swatch" style="--c:#7fe7ff"></span>Sugar Diamond <span class="num">1 slot · 250</span></li>
+            <li><span class="swatch" style="--c:#ff7a8a"></span>Amber Heart <span class="num">1 slot · 250</span></li>
+            <li><span class="swatch" style="--c:#c9b6ff"></span>Pristine Seal <span class="num">1 slot · 220</span></li>
+            <li><span class="swatch" style="--c:#ffc048"></span>Hollow Crown <span class="num">3 slots · 450</span></li>
+          </ul>
+          <div class="scores">
+            <p>Personal best <span class="num gold" id="best">0</span></p>
+            <h3 id="historyTitle">Session history</h3>
+            <ol class="history" id="history" aria-labelledby="historyTitle"></ol>
+            <p class="muted small" id="historyEmpty">No raids yet. Bank a raid and it appears here, saved in this browser only.</p>
+          </div>
+          <p class="sr-only" role="status" id="gameStatus"></p>
+        </section>
+
+        <!-- C: keeper console -->
+        <section class="panel panel-keeper" aria-labelledby="keeperTitle">
+          <div class="panel-head">
+            <h2 id="keeperTitle">Sepolia keeper console</h2>
+            <p class="muted" id="walletLine">No wallet connected.</p>
+          </div>
+          <dl class="readout readout-grid three">
+            <div><dt>Mining core</dt><dd class="num" id="cpPaused">--</dd></div>
+            <div><dt>Next round</dt><dd class="num" id="cpNext">--</dd></div>
+            <div><dt>Round settled</dt><dd class="num" id="cpSettled">--</dd></div>
+          </dl>
+          <p class="muted small" id="cpSource">From SqueekMining.checkpointStatus() on ethereum-sepolia-rpc.publicnode.com, every 15 s.</p>
+          <div class="tx-actions">
+            <div class="tx-action">
+              <button type="button" class="btn btn-primary" id="checkpointBtn" disabled>Run mining checkpoint</button>
+              <p class="hint" id="checkpointHint">Waiting for the checkpoint status.</p>
+            </div>
+            <div class="tx-action">
+              <button type="button" class="btn" id="pingBtn">Send tester ping (0-approve SQK)</button>
+              <p class="hint">Approves 0 SQK to the mining contract. It moves no tokens and costs only Sepolia gas.</p>
+            </div>
+          </div>
+          <h3 id="logTitle">Transaction log</h3>
+          <ol class="txlog" id="txlog" aria-labelledby="logTitle" aria-live="polite"></ol>
+          <p class="muted small" id="txEmpty">No transactions sent from this page yet.</p>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <p>Built by @tatthang · Powered by Squeekchain Sepolia Telemetry</p>
+    </footer>
+
+    <dialog class="sheet" id="walletSheet" aria-labelledby="sheetTitle">
+      <div class="sheet-head">
+        <h2 id="sheetTitle">Connect a wallet</h2>
+        <button type="button" class="icon-btn" id="sheetClose" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg></button>
+      </div>
+      <ul class="wallet-list" id="walletList"></ul>
+      <p class="muted small" id="sheetNote">Connects on Ethereum Sepolia. Transactions use Sepolia test ETH only.</p>
+    </dialog>
+  </body>
+</html>
